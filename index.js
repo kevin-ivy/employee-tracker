@@ -24,7 +24,7 @@ connection.connect(err => {
 
 //Create array of active Job Roles
 function createRoleArray() {
-    const query = `SELECT title FROM roles`;
+    const query = `SELECT id, title FROM roles`;
     connection.query(query,(err,results) => {
         //Empty Roles array before creating new one
         if (jobRoles) {
@@ -35,7 +35,7 @@ function createRoleArray() {
         let string = JSON.stringify(results);
         let json = JSON.parse(string);
         for (i = 0; i < json.length; i++) {
-            jobRoles.push(json[i].title);
+            jobRoles.push(json[i]);
         }
         return;
     });
@@ -43,7 +43,7 @@ function createRoleArray() {
 
 //Create array of active departments
 function createDeptArray() {
-    const query = `SELECT dept_name FROM departments`;
+    const query = `SELECT id, dept_name FROM departments`;
     connection.query(query,(err,results) => {
         //Empty departments array before creating new one
         if (deptList) {
@@ -54,7 +54,7 @@ function createDeptArray() {
         let string = JSON.stringify(results);
         let json = JSON.parse(string);
         for (i = 0; i < json.length; i++) {
-            deptList.push(json[i].dept_name);
+            deptList.push(json[i]);
         }
         return;
     });
@@ -94,7 +94,6 @@ function createEmployeesArray() {
         for (i = 0; i < json.length; i++) {
             employeeList.push(json[i]);
         }
-        console.log(employeeList);
         return;
     })
 }
@@ -114,9 +113,12 @@ function titleScreen() {
 
 //Reload to main menu after every interaction. Only display title splash once.
 function mainMenu() {
+    //Fill arrays each time mainMenu is called
     createDeptArray();
     createRoleArray();
+    createEmployeesArray() 
     createManagersArray();
+
     console.log('');
     inquirer.prompt({
         type: 'list',
@@ -152,6 +154,9 @@ function mainMenu() {
                 break;
             case 'Add an Employee':
                 addEmployee();
+                break;
+            case 'Update Employee Job Role':
+                updateEmployeeRole();
                 break;
             case 'Quit':
                 console.log('Goodbye');
@@ -213,6 +218,12 @@ function addDepartment() {
 
 //Add a new Job Role to the active role list
 function addRole() {
+    let departments = [];
+
+    for (i = 0; i < deptList.length; i++) {
+        departments.push(deptList[i].dept_name);
+    }
+
     inquirer.prompt([
         {
             type: 'input',
@@ -228,13 +239,13 @@ function addRole() {
             type: 'list',
             name: 'dept',
             message: 'Select department for job role:',
-            choices: deptList
+            choices: departments
         }
     ]).then(answer => {
 
         for (i = 0; i < deptList.length; i++) {
-            if (answer.dept === deptList[i]) {
-                answer.deptID = i + 1;
+            if (answer.dept === deptList[i].dept_name) {
+                answer.deptID = deptList[i].id;
             }
         }
 
@@ -251,11 +262,21 @@ function addRole() {
 
 //Add new employee
 function addEmployee() {
-    let managers = []
+    let managers = [];
 
     for (i = 0; i < managerList.length; i++) {
         managers.push(managerList[i].manager);
     }
+
+    managers.push('N/A');
+    managers.push(new inquirer.Separator());
+
+    let roles = [];
+    for (i = 0; i < jobRoles.length; i++) {
+        roles.push(jobRoles[i].title);
+    }
+
+    roles.push(new inquirer.Separator());
 
     inquirer.prompt([
         {
@@ -272,7 +293,7 @@ function addEmployee() {
             type: 'list',
             name: 'role',
             message: 'Select employee job role:',
-            choices: jobRoles
+            choices: roles
         },
         {
             type: 'list',
@@ -283,15 +304,19 @@ function addEmployee() {
     ]).then(answers => {
         //Cycle through jobRoles array to assign Role_ID
         for (i = 0; i < jobRoles.length; i++) {
-            if (answers.role === jobRoles[i]) {
-                answers.roleID = i + 1;
+            if (answers.role === jobRoles[i].title) {
+                answers.roleID = jobRoles[i].id;
             }
         }
 
         //Cycle through Managers array to assign Employee_ID
-        for (i = 0; i < managerList.length; i++) {
-            if (answers.manager === managerList[i].manager) {
-                answers.managerID = managerList[i].id;
+        if (answers.manager === 'N/A') {
+            answers.managerID = null;
+        } else{
+            for (i = 0; i < managerList.length; i++) {
+                if (answers.manager === managerList[i].manager) {
+                    answers.managerID = managerList[i].id;
+                }
             }
         }
 
@@ -309,7 +334,52 @@ function addEmployee() {
 
 //Update employee role
 function updateEmployeeRole() {
-    inquirer.prompt([
+    let employees = [];
 
-    ])
-}
+    for (i = 0; i < employeeList.length; i++) {
+        employees.push(employeeList[i].employee);
+    }
+
+    employees.push(new inquirer.Separator());
+
+    let roles = [];
+    for (i = 0; i < jobRoles.length; i++) {
+        roles.push(jobRoles[i].title);
+    }
+
+    roles.push(new inquirer.Separator());
+
+    inquirer.prompt([
+        {
+            type: 'list',
+            name: 'chosen',
+            message: 'Choose an employee to update:',
+            choices: employees
+        },
+        {
+            type: 'list',
+            name: 'role',
+            message: 'Select Job Role',
+            choices: roles
+        }
+    ]).then(answer => {
+        for (i = 0; i < employeeList.length; i++) {
+            if (answer.chosen === employeeList[i].employee) {
+                answer.id = employeeList[i].id;
+            }
+        }
+
+        for (i = 0; i < jobRoles.length; i++) {
+            if (answer.role === jobRoles[i].title) {
+                answer.roleID = jobRoles[i].id;
+            }
+        }
+
+        let query = `UPDATE employee SET role_id = ? WHERE id = ?`
+        connection.query(query,[answer.roleID, answer.id],(err,res) => {
+            if (err) throw err;
+            console.log('Employee role updated successfully.\n');
+            mainMenu();
+        });
+    });
+};
