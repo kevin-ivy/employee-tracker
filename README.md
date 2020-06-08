@@ -12,6 +12,11 @@
   * [Tests](#tests)
   * [License](#license)
   * [Questions](#questions)
+  
+  ## Screenshots
+  ![Main Menu](./assets/screenshot1.png)
+  
+  ![Employee Table](./assets/screenshot2.png)
     
   ## Installation
   
