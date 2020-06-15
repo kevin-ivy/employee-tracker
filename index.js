@@ -1,28 +1,18 @@
 const inquirer = require('inquirer');
-const mysql = require('mysql2');
 const cTable = require('console.table');
-let jobRoles = [];
+const connection = require('./config/connection');
 let deptList = [];
+let jobRoles = [];
 let managerList = [];
 let employeeList = [];
 
-const connection = mysql.createConnection({
-    host: 'localhost',
-    port: 3306,
-    // Your MySQL username
-    user: 'root',
-    // Your MySQL password
-    password: 'Blossom2010!',
-    database: 'employee_roster_db'
-  });
-  
 connection.connect(err => {
-   if (err) throw err;
-   console.log('connected as id ' + connection.threadId + '\n');
-   titleScreen();
-});
+    if (err) throw err;
+    console.log('connected as id ' + connection.threadId + '\n');
+    titleScreen();
+ });
 
-//Create array of active Job Roles
+ //Create array of active Job Roles
 function createRoleArray() {
     const query = `SELECT id, title FROM roles`;
     connection.query(query,(err,results) => {
@@ -113,11 +103,10 @@ function titleScreen() {
 
 //Reload to main menu after every interaction. Only display title splash once.
 function mainMenu() {
-    //Fill arrays each time mainMenu is called
     createDeptArray();
     createRoleArray();
-    createEmployeesArray() 
     createManagersArray();
+    createEmployeesArray();
 
     console.log('');
     inquirer.prompt({
@@ -282,12 +271,28 @@ function addEmployee() {
         {
             type: 'input',
             name: 'first',
-            message: "Enter employee's first name:"
+            message: "Enter employee's first name:",
+            validate: input => {
+                if (input) {
+                    return true;
+                } else {
+                    console.log('You must enter a first name');
+                    return false;
+                }
+            }
         },
         {
             type: 'input',
             name: 'last',
-            message: "Enter employee's last name:"
+            message: "Enter employee's last name:",
+            validate: input => {
+                if (input) {
+                    return true;
+                } else {
+                    console.log('You must enter a last name');
+                    return false;
+                }
+            }
         },
         {
             type: 'list',
@@ -318,7 +323,7 @@ function addEmployee() {
                     answers.managerID = managerList[i].id;
                 }
             }
-        }
+        } 
 
         connection.query(`INSERT INTO employee SET ?`, {
             first_name: answers.first,
@@ -383,3 +388,5 @@ function updateEmployeeRole() {
         });
     });
 };
+
+module.exports = {deptList, jobRoles, managerList, employeeList};
