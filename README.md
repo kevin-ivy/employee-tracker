@@ -17,6 +17,9 @@
   ![Main Menu](./assets/screenshot1.png)
   
   ![Employee Table](./assets/screenshot2.png)
+  
+  ## Demonstration Video
+  [Link to Demonstration](https://drive.google.com/file/d/1oLnwYsLt03PmK163tbfXXxpcot4VhS2w/view)
     
   ## Installation
   
